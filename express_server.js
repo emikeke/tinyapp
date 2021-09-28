@@ -51,7 +51,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-//shows long URL and redirects to the actual webpage
+//shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render('urls_show', templateVars);
@@ -63,13 +63,6 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
-
-/*//edits url and updates it in my URLs
-app.get('/urls/:shortURL', (req, res) => {
-  const shortURLID = req.params.shortURL;
-  const templateVars = { shortURL: shortURL, shortURL: urlDatabase[shortURLID] };
-  res.render('urls_show', templateVars);
-});*/
 
 //updating edited long URL and redirect into my URLs page
 app.post('/urls/:shortURL', (req, res) => {
