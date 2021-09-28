@@ -64,6 +64,7 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+
 //updating edited long URL and redirect into my URLs page
 app.post('/urls/:shortURL', (req, res) => {
   const shortURLID = req.params.shortURL;
@@ -71,6 +72,9 @@ app.post('/urls/:shortURL', (req, res) => {
   urlDatabase[shortURLID] = updatedLongURL;
   res.redirect('/urls');
 });
+
+//making POST for login
+
 
 app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
