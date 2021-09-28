@@ -14,47 +14,69 @@ function generateRandomString(length, chars) {
 
 app.set('view engine', 'ejs');
 
+//database
 const urlDatabase = {
   'b2xVn2' : 'http://www.lighthouselabs.ca',
   '9sm5xK' : 'http://www.google.com'
 };
 
+//homepage
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
 
+//creating a new URL
 app.get('/urls/new', (req, res) => {
   res.render("urls_new");
 });
 
+//my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
-app.post("/urls", (req, res) => {
+//adds a new url and redirects into my URLs w updated
+app.post('/urls', (req, res) => {
   const shortURL = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
   console.log(shortURL);
   console.log(req.body);  // Log the POST request body to the console
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
-}); //
+}); 
 
-//delete route
+//delete url in my URLS and redirects into same page
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
-  res.redirect(`/urls`);
+  res.redirect('/urls');
 });
 
+//shows long URL and redirects to the actual webpage
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-  res.render("urls_show", templateVars);
+  res.render('urls_show', templateVars);
 });
 
+//redirects into the actual webpage when you put short url in address bar
 app.get("/u/:shortURL", (req, res) => {
   // const longURL = ...
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
+});
+
+/*//edits url and updates it in my URLs
+app.get('/urls/:shortURL', (req, res) => {
+  const shortURLID = req.params.shortURL;
+  const templateVars = { shortURL: shortURL, shortURL: urlDatabase[shortURLID] };
+  res.render('urls_show', templateVars);
+});*/
+
+//updating edited long URL and redirect into my URLs page
+app.post('/urls/:shortURL', (req, res) => {
+  const shortURLID = req.params.shortURL;
+  const updatedLongURL= req.body.longURL;
+  urlDatabase[shortURLID] = updatedLongURL;
+  res.redirect('/urls');
 });
 
 app.get('/hello', (req, res) => {
