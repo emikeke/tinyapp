@@ -8,6 +8,30 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+function findUserByEmail (email, users) {
+
+  for (let userID in users) {
+    const user = users[userIDObj];
+    if (email === user.email) {
+      return user;
+    }
+  }
+  return false;
+}
+
 function generateRandomString(length, chars) {
   let result = '';
   for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
@@ -31,6 +55,31 @@ app.get('/', (req, res) => {
 app.get('/urls/new', (req, res) => {
   const templateVars = { username: req.cookies["username"] };
   res.render("urls_new", templateVars);
+});
+
+//register new user
+app.get('/register', (req, res) => {
+  const templateVars = { users, username: req.cookies["user"] };
+  res.render('urls_user-registration', templateVars);
+});
+
+//post new user info into user object
+app.post('/register', (req, res) => {
+  const userIDObj = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+  const id = req.body.id;
+  const email = req.body.email;
+  const password = req.body.password;
+  const userFound = findUserByEmail(email);
+  if (userFound){
+    return res.status(401).send('Sorry, that user already exists!');
+  }
+  users[userIDObj] = {
+    id: userIDObj,
+    email,
+    password
+  }
+  res.cookie('userID', userIDObj);
+  res.redirect('/urls');
 });
 
 //my URLs page (connects urlDatabase)
