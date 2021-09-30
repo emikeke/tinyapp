@@ -1,4 +1,4 @@
-const { request } = require('express');
+//const { request } = require('express');
 const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
@@ -13,24 +13,24 @@ app.use(cookieSession({
   keys: ['secret']
 }));
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 const generateRandomString = function(length, chars) {
   let result = '';
-  for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
-}
+};
 
 const urlsForUser = function(id) {
   let userURLs = {};
@@ -39,8 +39,8 @@ const urlsForUser = function(id) {
       userURLs[shortURL] = urlDatabase[shortURL];
     }
   }
-  return userURLs; 
-}
+  return userURLs;
+};
 
 app.set('view engine', 'ejs');
 
@@ -80,21 +80,21 @@ app.post('/register', (req, res) => {
   let password = req.body.password;
   if ((email === '') || (password === '')) {
     return res.status(400).send('Sorry, your email or password cannot be empty!');
-  } 
+  }
   //console.log(bcrypt.compareSync(password, hashedPassword));
   const userFound = getUserByEmail(email, users);
-  if (userFound){
+  if (userFound) {
     return res.status(400).send('Sorry, that email already exists!');
   }
   //console.log(userFound);
-  hashedPassword = bcrypt.hashSync(password, 10);
+  let hashedPassword = bcrypt.hashSync(password, 10);
   users[userIDObj] = {
-      id: userIDObj,
-      email,
-      password: hashedPassword
-    }
-    req.session.user_id = userIDObj;
-    res.redirect('/urls');
+    id: userIDObj,
+    email,
+    password: hashedPassword
+  };
+  req.session.user_id = userIDObj;
+  res.redirect('/urls');
 });
 
 //my URLs page (connects urlDatabase)
@@ -116,12 +116,12 @@ app.post('/urls', (req, res) => {
   //console.log(req.body);  // Log the POST request body to the console
   const email = req.body.email;
   let realUser;
-    for (let userID in users) {
-      const user = users[userID];
-      if (email === user.email) {
-        realUser = user;
-      }
+  for (let userID in users) {
+    const user = users[userID];
+    if (email === user.email) {
+      realUser = user;
     }
+  }
   if (!users[req.session["user_id"]]) {
     return res.status(400).send('Please log in/register!');
   }
@@ -129,7 +129,7 @@ app.post('/urls', (req, res) => {
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
   //console.log(urlDatabase[shortURL]);
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
-}); 
+});
 
 //delete url in my URLS and redirects into same page
 app.post('/urls/:shortURL/delete', (req, res) => {
@@ -163,7 +163,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post('/urls/:shortURL', (req, res) => {
   let userid = req.session["user_id"];
   const shortURLID = req.params.shortURL;
-  const updatedLongURL= req.body.longURL;
+  const updatedLongURL = req.body.longURL;
   if (userid) {
     urlDatabase[shortURLID].longURL = updatedLongURL;
     return res.redirect('/urls');
@@ -175,25 +175,25 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const userFound = getUserByEmail(email, users);
-  if (userFound === false){
+  if (userFound === false) {
     return res.status(403).send('Sorry, that email cannot be found!');
   }
   let realUser;
-    for (let userID in users) {
-      const user = users[userID];
-      if (email === user.email) {
-        realUser = user;
-      }
+  for (let userID in users) {
+    const user = users[userID];
+    if (email === user.email) {
+      realUser = user;
     }
-    //console.log(realUser);
-    if (!realUser) {
-      return res.status(403).send('Sorry, your email does not exist!');
-    }
-    if (!bcrypt.compareSync(password, realUser.password)) {
-      return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
-    }
-    req.session.user_id = realUser.id;
-    res.redirect('/urls');
+  }
+  //console.log(realUser);
+  if (!realUser) {
+    return res.status(403).send('Sorry, your email does not exist!');
+  }
+  if (!bcrypt.compareSync(password, realUser.password)) {
+    return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
+  }
+  req.session.user_id = realUser.id;
+  res.redirect('/urls');
 });
 
 //logout
