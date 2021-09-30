@@ -21,10 +21,9 @@ const users = {
   }
 }
 
-function findUserByEmail (email, users) {
-
+const findUserByEmail = function(email) {
   for (let userID in users) {
-    const user = users[userIDObj];
+    const user = users[userID];
     if (email === user.email) {
       return user;
     }
@@ -32,7 +31,7 @@ function findUserByEmail (email, users) {
   return false;
 }
 
-function generateRandomString(length, chars) {
+const generateRandomString = function(length, chars) {
   let result = '';
   for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
@@ -51,48 +50,57 @@ app.get('/', (req, res) => {
   res.send('Hello!');
 });
 
+//login
+app.get('/login', (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("urls_login", templateVars);
+});
+
 //creating a new URL
 app.get('/urls/new', (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
 //register new user
 app.get('/register', (req, res) => {
-  const templateVars = { users, username: req.cookies["user"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render('urls_user-registration', templateVars);
 });
 
 //post new user info into user object
 app.post('/register', (req, res) => {
   const userIDObj = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-  const id = req.body.id;
   const email = req.body.email;
   const password = req.body.password;
+  if ((email === '') || (password === '')) {
+    return res.status(400).send('Sorry, your email or password cannot be empty!');
+  } 
   const userFound = findUserByEmail(email);
   if (userFound){
-    return res.status(401).send('Sorry, that user already exists!');
+    return res.status(400).send('Sorry, that email already exists!');
   }
   users[userIDObj] = {
-    id: userIDObj,
-    email,
-    password
-  }
-  res.cookie('userID', userIDObj);
-  res.redirect('/urls');
+      id: userIDObj,
+      email,
+      password
+    }
+    res.cookie('user_id', userIDObj);
+    res.redirect('/urls');
 });
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  //console.log('hello', users[req.cookies["user_id"]]);
   res.render('urls_index', templateVars);
 });
 
 //adds a new url and redirects into my URLs w updated
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-  console.log(shortURL);
-  console.log(req.body);  // Log the POST request body to the console
+  //console.log(shortURL);
+  //console.log(req.body);  // Log the POST request body to the console
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 }); 
@@ -105,7 +113,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 //shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
   res.render('urls_show', templateVars);
 });
 
@@ -126,15 +134,32 @@ app.post('/urls/:shortURL', (req, res) => {
 
 //making POST for login, setting cookie to username
 app.post('/login', (req, res) => {
-  //console.log(req.body);
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
+  const email = req.body.email;
+  const password = req.body.password;
+  const userFound = findUserByEmail(email);
+  if (userFound === false){
+    return res.status(403).send('Sorry, that email cannot be found!');
+  }
+  let realUser;
+    for (let userID in users) {
+      const user = users[userID];
+      if ((email === user.email) && (password === user.password)) {
+        realUser = user;
+      }
+    }
+    console.log(realUser);
+    if (!realUser) {
+      return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
+    }
+    res.cookie('user_id', realUser.id);
+    res.redirect('/login');
 });
+
 
 //logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.redirect('urls');
+  res.clearCookie('user_id',users[req.cookies["user_id"]] );
+  res.redirect('/urls');
 });
 
 app.get('/hello', (req, res) => {
