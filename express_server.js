@@ -67,11 +67,11 @@ app.post('/register', (req, res) => {
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  let userid = req.session["user_id"];
+  let userid = req.session['user_id'];
   const templateVars = { urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
-    return res.redirect('/login');
-  }
+    return res.status(400).send("Please " + 'login'.link('/login') + "!");
+  } 
   res.render('urls_index', templateVars);
 });
 
@@ -87,7 +87,7 @@ app.post('/urls', (req, res) => {
     }
   }
   if (!users[req.session["user_id"]]) {
-    return res.status(400).send('Please log in/register!');
+    return res.status(400).send("Please " + 'login'.link('/login') + "!");
   }
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
   res.redirect(`/urls/${shortURL}`);
@@ -108,7 +108,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let userid = req.session["user_id"];
   const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
-    return res.redirect('/login');
+    return res.status(400).send("Please " + 'login'.link('/login') + "!");
   }
   res.render('urls_show', templateVars);
 });
