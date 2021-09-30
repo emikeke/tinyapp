@@ -4,6 +4,7 @@ const app = express();
 const PORT = 8080; //default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const { getUserByEmail } = require('./helpers');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -23,16 +24,6 @@ const users = {
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
-}
-
-const findUserByEmail = function(email) {
-  for (let userID in users) {
-    const user = users[userID];
-    if (email === user.email) {
-      return user;
-    }
-  }
-  return false;
 }
 
 const generateRandomString = function(length, chars) {
@@ -91,10 +82,11 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Sorry, your email or password cannot be empty!');
   } 
   //console.log(bcrypt.compareSync(password, hashedPassword));
-  const userFound = findUserByEmail(email);
+  const userFound = getUserByEmail(email, users);
   if (userFound){
     return res.status(400).send('Sorry, that email already exists!');
   }
+  //console.log(userFound);
   hashedPassword = bcrypt.hashSync(password, 10);
   users[userIDObj] = {
       id: userIDObj,
@@ -182,7 +174,7 @@ app.post('/urls/:shortURL', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const userFound = findUserByEmail(email);
+  const userFound = getUserByEmail(email, users);
   if (userFound === false){
     return res.status(403).send('Sorry, that email cannot be found!');
   }
