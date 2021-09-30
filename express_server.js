@@ -1,7 +1,6 @@
-//const { request } = require('express');
 const express = require('express');
 const app = express();
-const PORT = 8080; //default port 8080
+const PORT = 8080; 
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const { getUserByEmail } = require('./helpers');
@@ -101,9 +100,7 @@ app.post('/register', (req, res) => {
 app.get('/urls', (req, res) => {
   let userid = req.session["user_id"];
   const templateVars = { urls: urlsForUser(userid), user: users[userid] };
-  //console.log('hello', users[req.cookies["user_id"]]);
   if (!userid) {
-    //res.status(400).send('Please log in/register!');
     return res.redirect('/login');
   }
   res.render('urls_index', templateVars);
@@ -112,8 +109,6 @@ app.get('/urls', (req, res) => {
 //adds a new url and redirects into my URLs w updated
 app.post('/urls', (req, res) => {
   const shortURL = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
-  //console.log(shortURL);
-  //console.log(req.body);  // Log the POST request body to the console
   const email = req.body.email;
   let realUser;
   for (let userID in users) {
@@ -125,10 +120,8 @@ app.post('/urls', (req, res) => {
   if (!users[req.session["user_id"]]) {
     return res.status(400).send('Please log in/register!');
   }
-  //urlDatabase[shortURL].longURL = req.body.longURL;
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
-  //console.log(urlDatabase[shortURL]);
-  res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/${shortURL}`);
 });
 
 //delete url in my URLS and redirects into same page
@@ -146,7 +139,6 @@ app.get("/urls/:shortURL", (req, res) => {
   let userid = req.session["user_id"];
   const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
-    //return res.status(400).send('Please log in/register!');
     return res.redirect('/login');
   }
   res.render('urls_show', templateVars);
