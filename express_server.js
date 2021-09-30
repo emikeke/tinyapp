@@ -2,12 +2,15 @@ const { request } = require('express');
 const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['secret']
+}));
 
 const users = { 
   "userRandomID": {
@@ -63,19 +66,19 @@ app.get('/', (req, res) => {
 
 //login
 app.get('/login', (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_login", templateVars);
 });
 
 //creating a new URL
 app.get('/urls/new', (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
 //register new user
 app.get('/register', (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render('urls_user-registration', templateVars);
 });
 
@@ -84,32 +87,32 @@ app.post('/register', (req, res) => {
   const userIDObj = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
   const email = req.body.email;
   let password = req.body.password;
-  hashedPassword = bcrypt.hashSync(password, 10);
-  console.log(bcrypt.compareSync(password, hashedPassword));
-  if ((email === '') || (hashedPassword === '')) {
+  if ((email === '') || (password === '')) {
     return res.status(400).send('Sorry, your email or password cannot be empty!');
   } 
+  //console.log(bcrypt.compareSync(password, hashedPassword));
   const userFound = findUserByEmail(email);
   if (userFound){
     return res.status(400).send('Sorry, that email already exists!');
   }
+  hashedPassword = bcrypt.hashSync(password, 10);
   users[userIDObj] = {
       id: userIDObj,
       email,
       password: hashedPassword
     }
-    res.cookie('user_id', userIDObj);
+    req.session.user_id = userIDObj;
     res.redirect('/urls');
 });
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  let userid = req.cookies["user_id"];
+  let userid = req.session["user_id"];
   const templateVars = { urls: urlsForUser(userid), user: users[userid] };
   //console.log('hello', users[req.cookies["user_id"]]);
   if (!userid) {
     //res.status(400).send('Please log in/register!');
-    res.redirect('/login');
+    return res.redirect('/login');
   }
   res.render('urls_index', templateVars);
 });
@@ -127,32 +130,32 @@ app.post('/urls', (req, res) => {
         realUser = user;
       }
     }
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(400).send('Please log in/register!');
   }
   //urlDatabase[shortURL].longURL = req.body.longURL;
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
   //console.log(urlDatabase[shortURL]);
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 }); 
 
 //delete url in my URLS and redirects into same page
 app.post('/urls/:shortURL/delete', (req, res) => {
-  let userid = req.cookies["user_id"];
+  let userid = req.session["user_id"];
   if (userid) {
     delete urlDatabase[req.params.shortURL];
-    res.redirect('/urls');
+    return res.redirect('/urls');
   }
   res.redirect('/login');
 });
 
 //shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
-  let userid = req.cookies["user_id"];
+  let userid = req.session["user_id"];
   const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
     //return res.status(400).send('Please log in/register!');
-    res.redirect('/login');
+    return res.redirect('/login');
   }
   res.render('urls_show', templateVars);
 });
@@ -166,12 +169,12 @@ app.get("/u/:shortURL", (req, res) => {
 
 //updating edited long URL and redirect into my URLs page
 app.post('/urls/:shortURL', (req, res) => {
-  let userid = req.cookies["user_id"];
+  let userid = req.session["user_id"];
   const shortURLID = req.params.shortURL;
   const updatedLongURL= req.body.longURL;
   if (userid) {
     urlDatabase[shortURLID].longURL = updatedLongURL;
-    res.redirect('/urls');
+    return res.redirect('/urls');
   }
   res.redirect('/login');
 });
@@ -186,21 +189,24 @@ app.post('/login', (req, res) => {
   let realUser;
     for (let userID in users) {
       const user = users[userID];
-      if ((email === user.email) && (password === user.password)) {
+      if (email === user.email) {
         realUser = user;
       }
     }
     //console.log(realUser);
     if (!realUser) {
+      return res.status(403).send('Sorry, your email does not exist!');
+    }
+    if (!bcrypt.compareSync(password, realUser.password)) {
       return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
     }
-    res.cookie('user_id', realUser.id);
+    req.session.user_id = realUser.id;
     res.redirect('/urls');
 });
 
 //logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id', users[req.cookies["user_id"]] );
+  req.session = null;
   res.redirect('/urls');
 });
 
