@@ -101,6 +101,17 @@ app.post('/urls', (req, res) => {
   const shortURL = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
   //console.log(shortURL);
   //console.log(req.body);  // Log the POST request body to the console
+  const email = req.body.email;
+  let realUser;
+    for (let userID in users) {
+      const user = users[userID];
+      if (email === user.email) {
+        realUser = user;
+      }
+    }
+  if (!users[req.cookies["user_id"]]) {
+    return res.status(400).send('Please log in/register!');
+  }
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 }); 
@@ -146,7 +157,7 @@ app.post('/login', (req, res) => {
         realUser = user;
       }
     }
-    console.log(realUser);
+    //console.log(realUser);
     if (!realUser) {
       return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
     }
@@ -157,7 +168,7 @@ app.post('/login', (req, res) => {
 
 //logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id',users[req.cookies["user_id"]] );
+  res.clearCookie('user_id', users[req.cookies["user_id"]] );
   res.redirect('/urls');
 });
 
