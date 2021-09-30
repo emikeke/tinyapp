@@ -37,6 +37,16 @@ const generateRandomString = function(length, chars) {
   return result;
 }
 
+const urlsForUser = function(id) {
+  let userURLs = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURLs[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURLs; 
+}
+
 app.set('view engine', 'ejs');
 
 //database
@@ -91,8 +101,13 @@ app.post('/register', (req, res) => {
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  const templateVars = { urls:  urlDatabase, user: users[req.cookies["user_id"]] };
+  let userid = req.cookies["user_id"];
+  const templateVars = { urls: urlsForUser(userid), user: users[userid] };
   //console.log('hello', users[req.cookies["user_id"]]);
+  if (!userid) {
+    //res.status(400).send('Please log in/register!');
+    res.redirect('/login');
+  }
   res.render('urls_index', templateVars);
 });
 
@@ -120,13 +135,22 @@ app.post('/urls', (req, res) => {
 
 //delete url in my URLS and redirects into same page
 app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  let userid = req.cookies["user_id"];
+  if (userid) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+  }
+  res.redirect('/login');
 });
 
 //shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  let userid = req.cookies["user_id"];
+  const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
+  if (!userid) {
+    //return res.status(400).send('Please log in/register!');
+    res.redirect('/login');
+  }
   res.render('urls_show', templateVars);
 });
 
@@ -139,10 +163,14 @@ app.get("/u/:shortURL", (req, res) => {
 
 //updating edited long URL and redirect into my URLs page
 app.post('/urls/:shortURL', (req, res) => {
+  let userid = req.cookies["user_id"];
   const shortURLID = req.params.shortURL;
   const updatedLongURL= req.body.longURL;
-  urlDatabase[shortURLID].longURL = updatedLongURL;
-  res.redirect('/urls');
+  if (userid) {
+    urlDatabase[shortURLID].longURL = updatedLongURL;
+    res.redirect('/urls');
+  }
+  res.redirect('/login');
 });
 
 app.post('/login', (req, res) => {
@@ -166,7 +194,6 @@ app.post('/login', (req, res) => {
     res.cookie('user_id', realUser.id);
     res.redirect('/urls');
 });
-
 
 //logout
 app.post('/logout', (req, res) => {
