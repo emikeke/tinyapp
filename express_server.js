@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -12,7 +13,7 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple"
+    password: "purple-monkey-dinosaur"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -82,8 +83,10 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   const userIDObj = generateRandomString(6, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
   const email = req.body.email;
-  const password = req.body.password;
-  if ((email === '') || (password === '')) {
+  let password = req.body.password;
+  hashedPassword = bcrypt.hashSync(password, 10);
+  console.log(bcrypt.compareSync(password, hashedPassword));
+  if ((email === '') || (hashedPassword === '')) {
     return res.status(400).send('Sorry, your email or password cannot be empty!');
   } 
   const userFound = findUserByEmail(email);
@@ -93,7 +96,7 @@ app.post('/register', (req, res) => {
   users[userIDObj] = {
       id: userIDObj,
       email,
-      password
+      password: hashedPassword
     }
     res.cookie('user_id', userIDObj);
     res.redirect('/urls');
