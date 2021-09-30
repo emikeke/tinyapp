@@ -3,6 +3,10 @@ const app = express();
 const PORT = 8080; 
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const users = require('./helpers');
+const urlDatabase = require('./helpers')
+const { generateRandomString } = require('./helpers');
+const { urlsForUser } = require('./helpers');
 const { getUserByEmail } = require('./helpers');
 
 const bodyParser = require("body-parser");
@@ -12,42 +16,7 @@ app.use(cookieSession({
   keys: ['secret']
 }));
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-};
-
-const generateRandomString = function(length, chars) {
-  let result = '';
-  for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
-  return result;
-};
-
-const urlsForUser = function(id) {
-  let userURLs = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userURLs[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURLs;
-};
-
 app.set('view engine', 'ejs');
-
-//database
-const urlDatabase = {
-  'b2xVn2' : { longURL: 'http://www.lighthouselabs.ca', userID: 'userRandomID' },
-  '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
-};
 
 //homepage
 app.get('/', (req, res) => {
