@@ -1,10 +1,10 @@
 const express = require('express');
 const app = express();
-const PORT = 8080; 
+const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const users = require('./helpers');
-const urlDatabase = require('./helpers')
+const urlDatabase = require('./helpers');
 const { generateRandomString } = require('./helpers');
 const { urlsForUser } = require('./helpers');
 const { getUserByEmail } = require('./helpers');
