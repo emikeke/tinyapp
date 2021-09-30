@@ -132,7 +132,6 @@ app.post('/urls/:shortURL', (req, res) => {
   res.redirect('/urls');
 });
 
-//making POST for login, setting cookie to username/user_id
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
