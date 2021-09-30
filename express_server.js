@@ -12,7 +12,7 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "purple"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -41,8 +41,8 @@ app.set('view engine', 'ejs');
 
 //database
 const urlDatabase = {
-  'b2xVn2' : 'http://www.lighthouselabs.ca',
-  '9sm5xK' : 'http://www.google.com'
+  'b2xVn2' : { longURL: 'http://www.lighthouselabs.ca', userID: 'userRandomID' },
+  '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
 };
 
 //homepage
@@ -91,7 +91,7 @@ app.post('/register', (req, res) => {
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  const templateVars = { urls:  urlDatabase, user: users[req.cookies["user_id"]] };
   //console.log('hello', users[req.cookies["user_id"]]);
   res.render('urls_index', templateVars);
 });
@@ -112,7 +112,9 @@ app.post('/urls', (req, res) => {
   if (!users[req.cookies["user_id"]]) {
     return res.status(400).send('Please log in/register!');
   }
-  urlDatabase[shortURL] = req.body.longURL;
+  //urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies["user_id"] };
+  //console.log(urlDatabase[shortURL]);
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 }); 
 
@@ -124,14 +126,14 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 //shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render('urls_show', templateVars);
 });
 
 //redirects into the actual webpage when you put short url in address bar
 app.get("/u/:shortURL", (req, res) => {
   // const longURL = ...
-  const longURL = urlDatabase[req.params.shortURL];
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -139,7 +141,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post('/urls/:shortURL', (req, res) => {
   const shortURLID = req.params.shortURL;
   const updatedLongURL= req.body.longURL;
-  urlDatabase[shortURLID] = updatedLongURL;
+  urlDatabase[shortURLID].longURL = updatedLongURL;
   res.redirect('/urls');
 });
 
@@ -162,7 +164,7 @@ app.post('/login', (req, res) => {
       return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
     }
     res.cookie('user_id', realUser.id);
-    res.redirect('/login');
+    res.redirect('/urls');
 });
 
 
