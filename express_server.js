@@ -189,7 +189,9 @@ app.post('/login', (req, res) => {
   if (!realUser) {
     return res.status(403).send('Sorry, an error has occured!');
   }
-  if (!bcrypt.compareSync(password, realUser.password)) {
+  let isSynced = bcrypt.compareSync(password, realUser.password);
+  
+  if (!isSynced) {
     return res.status(403).send('Sorry, an error has occured!');
   }
   req.session.userId = realUser.id;
