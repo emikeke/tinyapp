@@ -16,7 +16,7 @@ const urlDatabase = {
   '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
 };
 
-const getUserByEmail = function(email, users) {
+const getUserByEmail = function(email) {
   for (let userID in users) {
     const user = users[userID];
     if (email === user.email) {

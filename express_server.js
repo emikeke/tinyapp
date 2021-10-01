@@ -1,9 +1,8 @@
 const express = require('express');
 const app = express();
-const PORT = 8080;
+const PORT = 8080; //default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
-const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -12,18 +11,46 @@ app.use(cookieSession({
   keys: ['secret']
 }));
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple"
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
+
+const findUserByEmail = function(email) {
+  for (let userID in users) {
+    const user = users[userID];
+    if (email === user.email) {
+      return user;
+    }
+  }
+  return false;
+};
+
+const generateRandomString = function(length, chars) {
+  let result = '';
+  for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+  return result;
+};
+
+const urlsForUser = function(id) {
+  let userURLs = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURLs[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURLs;
+};
+
+app.set('view engine', 'ejs');
 
 //database
 const urlDatabase = {
@@ -31,11 +58,9 @@ const urlDatabase = {
   '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
 };
 
-app.set('view engine', 'ejs');
-
 //homepage
 app.get('/', (req, res) => {
-  res.send('Hello!');
+  res.send("Please " + 'login'.link('/login') + "!");
 });
 
 //login
@@ -65,11 +90,10 @@ app.post('/register', (req, res) => {
     return res.status(400).send('Sorry, one or more fields cannot be empty!');
   }
   //console.log(bcrypt.compareSync(password, hashedPassword));
-  const userFound = getUserByEmail(email, users);
+  const userFound = findUserByEmail(email);
   if (userFound) {
     return res.status(400).send('Sorry, an error has occured!');
   }
-  //console.log(userFound);
   let hashedPassword = bcrypt.hashSync(password, 10);
   users[userIDObj] = {
     id: userIDObj,
@@ -82,11 +106,11 @@ app.post('/register', (req, res) => {
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  let userid = req.session['user_id'];
+  let userid = req.session["user_id"];
   const templateVars = { urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
-    return res.status(400).send("Please " + 'login'.link('/login') + "!");
-  } 
+    return res.send("Please " + 'login'.link('/login') + "!");
+  }
   res.render('urls_index', templateVars);
 });
 
@@ -102,10 +126,10 @@ app.post('/urls', (req, res) => {
     }
   }
   if (!users[req.session["user_id"]]) {
-    return res.status(400).send("Please " + 'login'.link('/login') + "!");
+    return res.send("Please " + 'login'.link('/login') + "!");
   }
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 });
 
 //delete url in my URLS and redirects into same page
@@ -123,7 +147,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let userid = req.session["user_id"];
   const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
   if (!userid) {
-    return res.status(400).send("Please " + 'login'.link('/login') + "!");
+    return res.send("Please " + 'login'.link('/login') + "!");
   }
   res.render('urls_show', templateVars);
 });
@@ -150,7 +174,7 @@ app.post('/urls/:shortURL', (req, res) => {
 app.post('/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const userFound = getUserByEmail(email, users);
+  const userFound = findUserByEmail(email);
   if (userFound === false) {
     return res.status(403).send('Sorry, an error has occured!');
   }
@@ -161,7 +185,6 @@ app.post('/login', (req, res) => {
       realUser = user;
     }
   }
-  //console.log(realUser);
   if (!realUser) {
     return res.status(403).send('Sorry, an error has occured!');
   }
