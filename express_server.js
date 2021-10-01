@@ -3,11 +3,7 @@ const app = express();
 const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
-const users = require('./helpers');
-const urlDatabase = require('./helpers');
-const { generateRandomString } = require('./helpers');
-const { urlsForUser } = require('./helpers');
-const { getUserByEmail } = require('./helpers');
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -15,6 +11,25 @@ app.use(cookieSession({
   name: 'session',
   keys: ['secret']
 }));
+
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+//database
+const urlDatabase = {
+  'b2xVn2' : { longURL: 'http://www.lighthouselabs.ca', userID: 'userRandomID' },
+  '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
+};
 
 app.set('view engine', 'ejs');
 
@@ -47,12 +62,12 @@ app.post('/register', (req, res) => {
   const email = req.body.email;
   let password = req.body.password;
   if ((email === '') || (password === '')) {
-    return res.status(400).send('Sorry, your email or password cannot be empty!');
+    return res.status(400).send('Sorry, one or more fields cannot be empty!');
   }
   //console.log(bcrypt.compareSync(password, hashedPassword));
   const userFound = getUserByEmail(email, users);
   if (userFound) {
-    return res.status(400).send('Sorry, that email already exists!');
+    return res.status(400).send('Sorry, an error has occured!');
   }
   //console.log(userFound);
   let hashedPassword = bcrypt.hashSync(password, 10);
@@ -137,7 +152,7 @@ app.post('/login', (req, res) => {
   const password = req.body.password;
   const userFound = getUserByEmail(email, users);
   if (userFound === false) {
-    return res.status(403).send('Sorry, that email cannot be found!');
+    return res.status(403).send('Sorry, an error has occured!');
   }
   let realUser;
   for (let userID in users) {
@@ -148,10 +163,10 @@ app.post('/login', (req, res) => {
   }
   //console.log(realUser);
   if (!realUser) {
-    return res.status(403).send('Sorry, your email does not exist!');
+    return res.status(403).send('Sorry, an error has occured!');
   }
   if (!bcrypt.compareSync(password, realUser.password)) {
-    return res.status(403).send('Sorry, your email exists but you entered the wrong password!');
+    return res.status(403).send('Sorry, an error has occured!');
   }
   req.session.user_id = realUser.id;
   res.redirect('/urls');
