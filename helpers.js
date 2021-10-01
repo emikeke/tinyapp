@@ -1,22 +1,6 @@
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
-}
+const { users, urlDatabase } = require('./databaseHelper');
 
-const urlDatabase = {
-  'b2xVn2' : { longURL: 'http://www.lighthouselabs.ca', userID: 'userRandomID' },
-  '9sm5xK' : { longURL: 'http://www.google.com', userID: 'user2RandomID'}
-};
-
-const getUserByEmail = function(email) {
+const findUserByEmail = function(email) {
   for (let userID in users) {
     const user = users[userID];
     if (email === user.email) {
@@ -28,7 +12,7 @@ const getUserByEmail = function(email) {
 
 const generateRandomString = function(length, chars) {
   let result = '';
-  for (var i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
   return result;
 };
 
@@ -43,7 +27,7 @@ const urlsForUser = function(id) {
 };
 
 module.exports = {
-  getUserByEmail,
+  findUserByEmail,
   generateRandomString,
   urlsForUser
 };
