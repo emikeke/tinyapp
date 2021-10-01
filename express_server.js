@@ -17,7 +17,7 @@ app.set("view engine", "ejs");
 
 //homepage
 app.get("/", (req, res) => {
-  res.send("Please " + "login".link("/login") + "!");
+  return res.send("Please " + "login".link("/login") + "!");
 });
 
 //login
@@ -28,6 +28,9 @@ app.get("/login", (req, res) => {
 
 //creating a new URL
 app.get("/urls/new", (req, res) => {
+  if(!users[req.session["userId"]]) {
+    return res.redirect("/login");
+  }
   const templateVars = { user: users[req.session["userId"]] };
   res.render("urls_new", templateVars);
 });
@@ -46,7 +49,6 @@ app.post("/register", (req, res) => {
   if ((email === "") || (password === "")) {
     return res.status(400).send("Sorry, one or more fields cannot be empty!");
   }
-  //console.log(bcrypt.compareSync(password, hashedPassword));
   const userFound = findUserByEmail(email);
   if (userFound) {
     return res.status(400).send("Sorry, an error has occured!");
@@ -78,7 +80,7 @@ app.post("/urls", (req, res) => {
     return res.send("Please " + "login".link("/login") + "!");
   }
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["userId"] };
-  res.redirect(`/urls/${shortURL}`);  // Respond with "Ok" (we will replace this)
+  res.redirect(`/urls/${shortURL}`); 
 });
 
 //delete url in my URLS and redirects into same page
@@ -91,21 +93,26 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/login");
 });
 
-//shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
+//shows long URL and edit long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
   let userId = req.session["userId"];
   const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userId), user: users[userId] };
   if (!userId) {
     return res.send("Please " + "login".link("/login") + "!");
   }
+  if(urlDatabase[req.params.shortURL] === undefined) {
+    return res.status(403).send("Sorry, an error has occured!");
+  }
   res.render("urls_show", templateVars);
 });
 
-//redirects into the actual webpage when you put short url in address bar
+//redirects into the actual webpage
 app.get("/u/:shortURL", (req, res) => {
-  // const longURL = ...
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  const shortURLValue = urlDatabase[req.params.shortURL];
+  if (shortURLValue === undefined) {
+    return res.status(403).send("Sorry, an error has occured!");
+  }
+  res.redirect(shortURLValue.longURL);
 });
 
 //updating edited long URL and redirect into my URLs page
