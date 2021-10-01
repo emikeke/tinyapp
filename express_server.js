@@ -65,19 +65,19 @@ app.get('/', (req, res) => {
 
 //login
 app.get('/login', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
+  const templateVars = { user: users[req.session["userId"]] };
   res.render("urls_login", templateVars);
 });
 
 //creating a new URL
 app.get('/urls/new', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
+  const templateVars = { user: users[req.session["userId"]] };
   res.render("urls_new", templateVars);
 });
 
 //register new user
 app.get('/register', (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
+  const templateVars = { user: users[req.session["userId"]] };
   res.render('urls_user-registration', templateVars);
 });
 
@@ -100,15 +100,15 @@ app.post('/register', (req, res) => {
     email,
     password: hashedPassword
   };
-  req.session.user_id = userIDObj;
+  req.session.userId = userIDObj;
   res.redirect('/urls');
 });
 
 //my URLs page (connects urlDatabase)
 app.get('/urls', (req, res) => {
-  let userid = req.session["user_id"];
-  const templateVars = { urls: urlsForUser(userid), user: users[userid] };
-  if (!userid) {
+  let userId = req.session["userId"];
+  const templateVars = { urls: urlsForUser(userId), user: users[userId] };
+  if (!userId) {
     return res.send("Please " + 'login'.link('/login') + "!");
   }
   res.render('urls_index', templateVars);
@@ -125,17 +125,17 @@ app.post('/urls', (req, res) => {
       realUser = user;
     }
   }
-  if (!users[req.session["user_id"]]) {
+  if (!users[req.session["userId"]]) {
     return res.send("Please " + 'login'.link('/login') + "!");
   }
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["user_id"] };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session["userId"] };
   res.redirect(`/urls/${shortURL}`);  // Respond with 'Ok' (we will replace this)
 });
 
 //delete url in my URLS and redirects into same page
 app.post('/urls/:shortURL/delete', (req, res) => {
-  let userid = req.session["user_id"];
-  if (userid) {
+  let userId = req.session["userId"];
+  if (userId) {
     delete urlDatabase[req.params.shortURL];
     return res.redirect('/urls');
   }
@@ -144,9 +144,9 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 //shows long URL and redirects to the actual webpage, updating edited long URL in my URLS
 app.get("/urls/:shortURL", (req, res) => {
-  let userid = req.session["user_id"];
-  const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userid), user: users[userid] };
-  if (!userid) {
+  let userId = req.session["userId"];
+  const templateVars = { shortURL: req.params.shortURL, urls: urlsForUser(userId), user: users[userId] };
+  if (!userId) {
     return res.send("Please " + 'login'.link('/login') + "!");
   }
   res.render('urls_show', templateVars);
@@ -161,10 +161,10 @@ app.get("/u/:shortURL", (req, res) => {
 
 //updating edited long URL and redirect into my URLs page
 app.post('/urls/:shortURL', (req, res) => {
-  let userid = req.session["user_id"];
+  let userId = req.session["userId"];
   const shortURLID = req.params.shortURL;
   const updatedLongURL = req.body.longURL;
-  if (userid) {
+  if (userId) {
     urlDatabase[shortURLID].longURL = updatedLongURL;
     return res.redirect('/urls');
   }
@@ -183,6 +183,7 @@ app.post('/login', (req, res) => {
     const user = users[userID];
     if (email === user.email) {
       realUser = user;
+      break;
     }
   }
   if (!realUser) {
@@ -191,7 +192,7 @@ app.post('/login', (req, res) => {
   if (!bcrypt.compareSync(password, realUser.password)) {
     return res.status(403).send('Sorry, an error has occured!');
   }
-  req.session.user_id = realUser.id;
+  req.session.userId = realUser.id;
   res.redirect('/urls');
 });
 
