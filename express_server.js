@@ -17,6 +17,9 @@ app.set("view engine", "ejs");
 
 //homepage
 app.get("/", (req, res) => {
+  if([req.session["userId"]]) {
+    return res.redirect("/urls");
+  }
   return res.send("Please " + "login".link("/login") + "!");
 });
 
@@ -100,9 +103,9 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!userId) {
     return res.send("Please " + "login".link("/login") + "!");
   }
-  if(urlDatabase[req.params.shortURL] === undefined) {
+  if((urlDatabase[req.params.shortURL] === undefined) || (!urlsForUser(userId)[req.params.shortURL])) {
     return res.status(403).send("Sorry, an error has occured!");
-  }
+  } 
   res.render("urls_show", templateVars);
 });
 
